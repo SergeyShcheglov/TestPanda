@@ -6,3 +6,22 @@
 //
 
 import Foundation
+
+struct MovieResponse: Decodable {
+    let results: [Movie]
+}
+
+struct Movie: Decodable {
+    enum CodingKeys: String, CodingKey {
+        case rating = "vote_average"
+        case posterPath = "poster_path"
+        case title
+        case overview
+    }
+    
+    var title: String?
+    var rating: Double?
+    var overview: String?
+    var backdropPath: String?
+    var posterPath: String?
+}
