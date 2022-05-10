@@ -8,11 +8,55 @@
 import Foundation
 
 class NetworkManager {
+    let imageCache = NSCache<NSString, NSData>()
     
+    static let shared = NetworkManager()
     private init() {
         
     }
-    private let baseUrlString = "https://api.themoviedb.org/3"
-    private let popularFilms = "movie/popular"
+    private let baseUrlString = "https://api.themoviedb.org/3/search"
+    private let movies = "movie"
+    private let popularMovies = "movie/popular"
     
+    
+    private let imageUrl = "https://image.tmdb.org/t/p/original/"
+    
+    func getMovies(query: String, completion: @escaping ([Movie]?) -> Void) {
+        let urlString = "\(baseUrlString)/\(movies)?api_key=\(APIKey.key)&query=\(query)"
+        guard let url = URL(string: urlString) else { return }
+        
+        URLSession.shared.dataTask(with: url) { (data, response, error) in
+            
+            guard error == nil, let data = data else {
+                print("smth")
+                completion(nil)
+                return
+            }
+            
+            let movieResponse = try? JSONDecoder().decode(MovieResponse.self, from: data)
+            movieResponse == nil ? completion(nil) : completion(movieResponse!.results)
+            print("session \(movieResponse)")
+        }.resume()
+    }
+    //
+    func getImage(urlString: String, completion: @escaping (Data?) -> Void) {
+        guard let url = URL(string: urlString) else {
+            completion(nil)
+            return
+        }
+        
+        if let cachedImage = imageCache.object(forKey: NSString(string: urlString)) {
+            completion(cachedImage as Data)
+        } else {
+            URLSession.shared.dataTask(with: url) { (data, response, error) in
+                guard error == nil, let data = data else {
+                    completion(nil)
+                    return
+                }
+                
+                self.imageCache.setObject(data as NSData, forKey: NSString(string: urlString))
+                completion(data)
+            }.resume()
+        }
+    }
 }
