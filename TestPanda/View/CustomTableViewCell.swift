@@ -8,6 +8,24 @@
 import UIKit
 
 final class CustomTableViewCell: UITableViewCell {
+    var movieVM: MovieViewModel? {
+        didSet {
+            if let movieVM = movieVM {
+                movieTitle.text = movieVM.title
+                rating.text = String(movieVM.rating)
+                overview.text = movieVM.overview
+                NetworkManager.shared.getImage(urlString: "https://image.tmdb.org/t/p/original\(movieVM.posterPath)") { data in
+                    guard let data = data else {
+                        return
+                    }
+                    DispatchQueue.main.async {
+                        self.coverImage.image = UIImage(data: data)
+                    }
+                }
+                
+            }
+        }
+    }
     
     static let identifier = "CustomTableViewCell"
 
@@ -61,14 +79,14 @@ final class CustomTableViewCell: UITableViewCell {
         movieTitle.frame = CGRect(x: 8 + coverImage.frame.size.width,
                                   y: 0,
                                   width: contentView.frame.size.width - coverImage.frame.size.width,
-                                  height: contentView.frame.size.height / 3)
+                                  height: 20)
         rating.frame = CGRect(x: 8 + coverImage.frame.size.width,
                               y: 8 + movieTitle.frame.size.height ,
                               width: contentView.frame.size.width - coverImage.frame.size.width,
-                              height: contentView.frame.size.height / 3)
+                              height: 20)
         overview.frame = CGRect(x: 8 + coverImage.frame.size.width,
                                 y: 8 + movieTitle.frame.size.height + rating.frame.size.height,
                                 width: contentView.frame.size.width - coverImage.frame.size.width,
-                                height: contentView.frame.size.height / 3)
+                                height: contentView.frame.size.height / 2)
     }
 }
