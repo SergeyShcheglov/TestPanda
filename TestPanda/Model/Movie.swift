@@ -15,6 +15,7 @@ struct Movie: Decodable {
     enum CodingKeys: String, CodingKey {
         case rating = "vote_average"
         case posterPath = "poster_path"
+        case releaseYear = "release_date"
         case title
         case overview
     }
@@ -24,4 +25,5 @@ struct Movie: Decodable {
     var overview: String?
     var backdropPath: String?
     var posterPath: String?
+    var releaseYear: String?
 }
