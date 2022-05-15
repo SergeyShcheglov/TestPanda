@@ -6,19 +6,22 @@
 //
 
 import UIKit
+import SDWebImage
 
 class ViewController: UIViewController, UITextFieldDelegate {
-    //    var movies = [Movie]()
-    var viewModel = PopularMovieViewModel()
-    
+    var movies = [Movie]()
     var images = [UIImageView]()
-
-    var frame = CGRect(x: 0, y: 0, width: 60, height: 120)
-    private var popularMovies: UIScrollView = {
-        let scroll = UIScrollView()
-        scroll.translatesAutoresizingMaskIntoConstraints = false
-        
-        return scroll
+    var viewModel = MovieListViewModel()
+    var popularViewModel = PopularMovieListViewModel()
+    
+    private var collectionView: UICollectionView = {
+        let layout = UICollectionViewFlowLayout()
+        layout.scrollDirection = .horizontal
+        let collection = UICollectionView(frame: .zero, collectionViewLayout: layout)
+        collection.translatesAutoresizingMaskIntoConstraints = false
+        collection.showsHorizontalScrollIndicator = false
+        collection.register(CustomCollectionViewCell.self, forCellWithReuseIdentifier: CustomCollectionViewCell.identifier)
+        return collection
     }()
     
     let searchField: UITextField = {
@@ -26,7 +29,8 @@ class ViewController: UIViewController, UITextFieldDelegate {
         search.translatesAutoresizingMaskIntoConstraints = false
         search.backgroundColor = .white
         search.textColor = .black
-        //        search.frame.size.height = 80
+        search.returnKeyType = .default
+        search.layer.cornerRadius = 10
         return search
     }()
     
@@ -39,58 +43,46 @@ class ViewController: UIViewController, UITextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view.
         setTableViewDelegates()
-        
-        popularMovies.showsHorizontalScrollIndicator = false
-        popularMovies.isPagingEnabled = true
-                
-                for index in 0..<100 {
-                    frame.origin.x = popularMovies.frame.size.width * CGFloat(index)
-                    frame.size = popularMovies.frame.size
-                    
-                    let imageView = UIImageView(frame: frame)
-                    imageView.image = UIImage(named: "mcconaughey")
-                    self.popularMovies.addSubview(imageView)
-                }
-                popularMovies.contentSize = CGSize(width: popularMovies.frame.size.width * CGFloat(images.count), height: popularMovies.frame.size.height)
-                popularMovies.delegate = self
-                tableView.dataSource = self
-                tableView.delegate = self
+        setCollectionViewDelegates()
+        loadPopularMovies()
         setupView()
-
     }
-    var pageControl = UIPageControl()
-    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
-            var page = popularMovies.contentOffset.x/popularMovies.frame.size.width
-            pageControl.currentPage = Int(page)
-        }
+    
     private func setupView() {
-        //        view.backgroundColor = UIColor(ciColor: .white)
-        //        navigationController?.navigationBar.tit = .white
-        
-        view.addSubview(popularMovies)
+        title = "Movie searcher"
         view.addSubview(searchField)
         view.addSubview(tableView)
+        view.addSubview(collectionView)
         setupConstraints()
+    }
+    
+    private func loadPopularMovies() {
+        popularViewModel.getPopularMovies() { _ in
+            DispatchQueue.main.async {
+                self.collectionView.reloadData()
+                print(self.popularViewModel.popularMovieVM.count)
+            }
+        }
     }
     
     private func setupConstraints() {
         NSLayoutConstraint.activate([
             searchField.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 10),
-            searchField.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            searchField.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8),
+            searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -8),
+            searchField.heightAnchor.constraint(equalToConstant: 30),
         ])
         
         NSLayoutConstraint.activate([
-            popularMovies.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 0),
-            popularMovies.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            popularMovies.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            popularMovies.heightAnchor.constraint(equalToConstant: 100)
+            collectionView.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 0),
+            collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            collectionView.heightAnchor.constraint(equalToConstant: 150)
         ])
         
         NSLayoutConstraint.activate([
-            tableView.topAnchor.constraint(equalTo: popularMovies.bottomAnchor, constant: 0),
+            tableView.topAnchor.constraint(equalTo: collectionView.bottomAnchor, constant: 0),
             tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
@@ -103,6 +95,11 @@ class ViewController: UIViewController, UITextFieldDelegate {
         searchField.delegate = self
     }
     
+    private func setCollectionViewDelegates() {
+        collectionView.dataSource = self
+        collectionView.delegate = self
+    }
+    
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         searchMovies()
         return true
@@ -111,39 +108,16 @@ class ViewController: UIViewController, UITextFieldDelegate {
     func searchMovies() {
         searchField.resignFirstResponder()
         guard let text = searchField.text, !text.isEmpty else { return }
-        let query = text.replacingOccurrences(of: " ", with: "%20")
+        
         viewModel.movieVM.removeAll()
-        viewModel.getMovies(query: query) { _ in
+        viewModel.getMovies(query: text) { _ in
             DispatchQueue.main.async {
                 self.tableView.reloadData()
-                
             }
         }
-        
-        
-        //        URLSession.shared.dataTask(with: URL(string: "https://api.themoviedb.org/3/search/movie?api_key=b8a323439e1ec77ec1b324bfef77e9aa&query=\(query)")!, completionHandler: { data, response, error in
-        //            guard let data = data, error == nil else { return }
-        //
-        //            var results: MovieResponse?
-        //            do {
-        //                results = try JSONDecoder().decode(MovieResponse.self, from: data)
-        //            } catch {
-        //                print("error")
-        //            }
-        //
-        //            guard let finalResults = results else { return }
-        //
-        //            let newMovies = finalResults.results
-        //            self.movies.append(contentsOf: newMovies)
-        //
-        //                    DispatchQueue.main.async {
-        //                        self.tableView.reloadData()
-        //                    }
-        //        }).resume()
     }
-
+    
 }
-
 
 //MARK: - UITableViewDataSource, UITableViewDelegate
 extension ViewController: UITableViewDataSource, UITableViewDelegate {
@@ -157,6 +131,9 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
         
         let movies = viewModel.movieVM[indexPath.row]
         cell?.movieVM = movies
+        
+        cell?.coverImage.sd_setImage(with: URL(string: "\(movies.posterPath)"))
+        
         return cell ?? CustomTableViewCell()
     }
     
@@ -167,6 +144,27 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
         
-        let detailedVC = DetailedViewController()
+        let detailedVC = DetailedViewController(movie: viewModel.movieVM[indexPath.row])
+        self.navigationController?.pushViewController(detailedVC, animated: true)
     }
 }
+
+//MARK: - UICollectionViewDataSource, UICollectionViewDelegate
+extension ViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return popularViewModel.popularMovieVM.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: CustomCollectionViewCell.identifier, for: indexPath) as? CustomCollectionViewCell
+        let imageUrl = popularViewModel.popularMovieVM[indexPath.row].posterPath
+        cell?.imageView.sd_setImage(with: URL(string: "\(imageUrl)"))
+        return cell ?? CustomCollectionViewCell()
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        return CGSize(width: 100 , height: 120 )
+    }
+}
+
+
