@@ -7,7 +7,7 @@
 
 import Foundation
 
-class PopularMovieViewModel {
+class MovieListViewModel {
     
     var movieVM = [MovieViewModel]()
 
