@@ -14,28 +14,43 @@ class NetworkManager {
     private init() {
         
     }
-    private let baseUrlString = "https://api.themoviedb.org/3/search"
+    private let baseUrlString = "https://api.themoviedb.org/3/"
+    private let searchMovies = "search/movie"
     private let movies = "movie"
     private let popularMovies = "movie/popular"
     
     
     private let imageUrl = "https://image.tmdb.org/t/p/original/"
     
+    func getPopularMovies(completion: @escaping ([Movie]?) -> Void) {
+        let urlString = "\(baseUrlString)\(popularMovies)&api_key=\(APIKey.key)"
+        guard let url = URL(string: urlString) else { return }
+        
+        URLSession.shared.dataTask(with: url) { data, response, error in
+            guard error == nil, let data = data else {
+                completion(nil)
+                return
+            }
+            let movieResponse = try? JSONDecoder().decode(MovieResponse.self, from: data)
+            movieResponse == nil ? completion(nil) : completion(movieResponse!.results)
+            
+        }.resume()
+    }
+    
     func getMovies(query: String, completion: @escaping ([Movie]?) -> Void) {
-        let urlString = "\(baseUrlString)/\(movies)?api_key=\(APIKey.key)&query=\(query)"
+        let urlString = "\(baseUrlString)\(searchMovies)?api_key=\(APIKey.key)&query=\(query)"
         guard let url = URL(string: urlString) else { return }
         
         URLSession.shared.dataTask(with: url) { (data, response, error) in
             
             guard error == nil, let data = data else {
-                print("smth")
                 completion(nil)
                 return
             }
             
             let movieResponse = try? JSONDecoder().decode(MovieResponse.self, from: data)
             movieResponse == nil ? completion(nil) : completion(movieResponse!.results)
-            print("session \(movieResponse)")
+//            print("session \(movieResponse)")
         }.resume()
     }
     //

@@ -26,6 +26,13 @@ struct MovieViewModel {
     }
     
     var posterPath: String {
-        return movie.posterPath ?? "https://t3.ftcdn.net/jpg/04/34/72/82/360_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg"
+        movie.posterPath == nil
+        ? "https://t3.ftcdn.net/jpg/04/34/72/82/360_F_434728286_OWQQvAFoXZLdGHlObozsolNeuSxhpr84.jpg"
+        : "https://image.tmdb.org/t/p/original/\(movie.posterPath!)"
+    }
+    
+    var releaseYear: String {
+        let date = movie.releaseYear ?? ""
+        return String(date.prefix(4))
     }
 }

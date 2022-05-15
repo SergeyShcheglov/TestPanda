@@ -8,10 +8,13 @@
 import UIKit
 
 class ViewController: UIViewController, UITextFieldDelegate {
-//    var movies = [Movie]()
+    //    var movies = [Movie]()
     var viewModel = PopularMovieViewModel()
     
-    private let popularMovies: UIScrollView = {
+    var images = [UIImageView]()
+
+    var frame = CGRect(x: 0, y: 0, width: 60, height: 120)
+    private var popularMovies: UIScrollView = {
         let scroll = UIScrollView()
         scroll.translatesAutoresizingMaskIntoConstraints = false
         
@@ -37,12 +40,31 @@ class ViewController: UIViewController, UITextFieldDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-        setupView()
         setTableViewDelegates()
         
-        
+        popularMovies.showsHorizontalScrollIndicator = false
+        popularMovies.isPagingEnabled = true
+                
+                for index in 0..<100 {
+                    frame.origin.x = popularMovies.frame.size.width * CGFloat(index)
+                    frame.size = popularMovies.frame.size
+                    
+                    let imageView = UIImageView(frame: frame)
+                    imageView.image = UIImage(named: "mcconaughey")
+                    self.popularMovies.addSubview(imageView)
+                }
+                popularMovies.contentSize = CGSize(width: popularMovies.frame.size.width * CGFloat(images.count), height: popularMovies.frame.size.height)
+                popularMovies.delegate = self
+                tableView.dataSource = self
+                tableView.delegate = self
+        setupView()
+
     }
-    
+    var pageControl = UIPageControl()
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+            var page = popularMovies.contentOffset.x/popularMovies.frame.size.width
+            pageControl.currentPage = Int(page)
+        }
     private func setupView() {
         //        view.backgroundColor = UIColor(ciColor: .white)
         //        navigationController?.navigationBar.tit = .white
@@ -60,12 +82,12 @@ class ViewController: UIViewController, UITextFieldDelegate {
             searchField.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
         
-                NSLayoutConstraint.activate([
-                    popularMovies.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 0),
-                    popularMovies.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-                    popularMovies.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-                    popularMovies.heightAnchor.constraint(equalToConstant: 100)
-                ])
+        NSLayoutConstraint.activate([
+            popularMovies.topAnchor.constraint(equalTo: searchField.bottomAnchor, constant: 0),
+            popularMovies.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            popularMovies.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            popularMovies.heightAnchor.constraint(equalToConstant: 100)
+        ])
         
         NSLayoutConstraint.activate([
             tableView.topAnchor.constraint(equalTo: popularMovies.bottomAnchor, constant: 0),
@@ -97,7 +119,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
                 
             }
         }
-       
+        
         
         //        URLSession.shared.dataTask(with: URL(string: "https://api.themoviedb.org/3/search/movie?api_key=b8a323439e1ec77ec1b324bfef77e9aa&query=\(query)")!, completionHandler: { data, response, error in
         //            guard let data = data, error == nil else { return }
@@ -114,11 +136,12 @@ class ViewController: UIViewController, UITextFieldDelegate {
         //            let newMovies = finalResults.results
         //            self.movies.append(contentsOf: newMovies)
         //
-//                    DispatchQueue.main.async {
-//                        self.tableView.reloadData()
-//                    }
+        //                    DispatchQueue.main.async {
+        //                        self.tableView.reloadData()
+        //                    }
         //        }).resume()
     }
+
 }
 
 
@@ -143,5 +166,7 @@ extension ViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
+        
+        let detailedVC = DetailedViewController()
     }
 }
