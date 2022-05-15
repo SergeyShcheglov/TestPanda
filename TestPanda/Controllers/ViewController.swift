@@ -9,8 +9,6 @@ import UIKit
 import SDWebImage
 
 class ViewController: UIViewController, UITextFieldDelegate {
-    var movies = [Movie]()
-    var images = [UIImageView]()
     var viewModel = MovieListViewModel()
     var popularViewModel = PopularMovieListViewModel()
     
